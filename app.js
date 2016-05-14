@@ -25,7 +25,18 @@ app.get('/get/games/:query', function (req, res) {
 	
 	gosu.fetchMatchUrls(type, null, function (error, URLs) {
 		gosu.parseMatches(URLs, function (error, data) {
-			res.jsonp(data);
+			var matches = data;
+			var nonCompletedMatches = [];
+			
+			for (var i = 0; i < matches.length; i++) {
+				var match = matches[i];
+				if (match.status != 'Complete') {
+					nonCompletedMatches.push(match);
+				}
+			}
+			
+			console.log('Sending ' + nonCompletedMatches.length + ' ' + type + ' matches back.');
+			res.jsonp(nonCompletedMatches);
 		});
 	});
 });
