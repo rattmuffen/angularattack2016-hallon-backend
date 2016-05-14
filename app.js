@@ -19,24 +19,41 @@ app.use(morgan('dev'));
 app.set("jsonp callback", true);
 
 
-app.get('/get/games/:query', function (req, res) {
-	var type = req.params.query;
-	console.log('Got request for ' + type + ' games!');
+app.get('/get/games/:type/:status', function (req, res) {
+	var type = req.params.type;
+	var status = req.params.status;
+	
+	console.log('Got request for ' + status + ' ' + type + ' games!');
 	
 	gosu.fetchMatchUrls(type, null, function (error, URLs) {
 		gosu.parseMatches(URLs, function (error, data) {
 			var matches = data;
-			var nonCompletedMatches = [];
+			var liveMatches = [];
+			var completeMatches = [];
+			var upcomingMatches = [];
 			
 			for (var i = 0; i < matches.length; i++) {
 				var match = matches[i];
-				if (match.status != 'Complete') {
-					nonCompletedMatches.push(match);
+				
+				if (match.status == 'Complete') {
+					completeMatches.push(match);
+				} else if (match.status == 'Live') {
+					liveMatches.push(match);
+				} else if (match.status == 'Upcoming') {
+					upcomingMatches.push(match);
 				}
 			}
 			
-			console.log('Sending ' + nonCompletedMatches.length + ' ' + type + ' matches back.');
-			res.jsonp(nonCompletedMatches);
+			var sendMatches;
+			if (status == 'live') {
+				sendMatches = liveMatches;
+			} else if (status == 'complete') {
+				sendMatches = completeMatches;
+			} else if (status == 'upcoming') {
+				sendMatches = upcomingMatches;
+			}
+			
+			console.log('Sending ' + sendMatches.length + ' ' + status + ' ' + type + ' matches back.');
 		});
 	});
 });
