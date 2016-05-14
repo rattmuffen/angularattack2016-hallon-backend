@@ -22,68 +22,88 @@ app.set("jsonp callback", true);
 
 
 app.get('/get/stream/:channel', function (req, res) {
-	var channel = req.params.channel;
-	console.log('Get streams for ' + channel);
-	
-	twitchStream.get(channel).then(function (streams) {
-		res.jsonp(JSON.stringify(streams));
-	});
+	try {
+		var channel = req.params.channel;
+		console.log('Get streams for ' + channel);
+
+		twitchStream.get(channel).then(function (streams) {
+			res.jsonp(JSON.stringify(streams));
+		});
+	} catch (error) {
+		res.jsonp(JSON.stringify({'error': error}));
+	}
 });
 
 app.get('/get/channel/:url', function (req, res) {
-	var gosuUrl = req.params.url;
-	
-	var tournamentString = gosuUrl.split('/')[5];
-	var tournament = tournamentString.substr(tournamentString.indexOf('-') + 1, tournamentString.length);
-	tournament = tournament.replace(new RegExp('-', 'g'), ' ');
-	console.log('Search for tournament: ' + tournament);
-		
-	callTwitchAPI('search/channels?q=' + encodeURIComponent(tournament), function (results) {
-		res.jsonp(JSON.stringify(results));
-	});
+	try {
+		var gosuUrl = req.params.url;
+
+		var tournamentString = gosuUrl.split('/')[5];
+		var tournament = tournamentString.substr(tournamentString.indexOf('-') + 1, tournamentString.length);
+		tournament = tournament.replace(new RegExp('-', 'g'), ' ');
+		console.log('Search for tournament: ' + tournament);
+
+		callTwitchAPI('search/channels?q=' + encodeURIComponent(tournament), function (results) {
+			res.jsonp(JSON.stringify(results));
+		});
+	} catch (error) {
+		res.jsonp(JSON.stringify({'error': error}));
+	}
 });
 
 
 app.get('/get/games/:type/:status', function (req, res) {
-	var type = req.params.type;
-	var status = req.params.status;
-	
-	console.log('Got request for ' + status + ' ' + type + ' games!');
-	
-	gosu.fetchMatchUrls(type == 'all' ? null : type, null, function (error, URLs) {
-		gosu.parseMatches(URLs, function (error, data) {
-			var matches = data;
-			var liveMatches = [];
-			var completeMatches = [];
-			var upcomingMatches = [];
-			
-			for (var i = 0; i < matches.length; i++) {
-				var match = matches[i];
-				
-				if (match.status == 'Complete') {
-					completeMatches.push(match);
-				} else if (match.status == 'Live') {
-					liveMatches.push(match);
-				} else if (match.status == 'Upcoming') {
-					upcomingMatches.push(match);
+	try {
+		var type = req.params.type;
+		var status = req.params.status;
+
+		console.log('Got request for ' + status + ' ' + type + ' games!');
+
+		gosu.fetchMatchUrls(type == 'all' ? null : type, null, function (error, URLs) {
+			if (error) {
+				res.jsonp(JSON.stringify({'error': error}));
+			}
+
+			gosu.parseMatches(URLs, function (error, data) {
+				if (error) {
+					res.jsonp(JSON.stringify({'error': error}));
 				}
-			}
-			
-			var sendMatches;
-			if (status == 'live') {
-				sendMatches = liveMatches;
-			} else if (status == 'complete') {
-				sendMatches = completeMatches;
-			} else if (status == 'upcoming') {
-				sendMatches = upcomingMatches;
-			} else if (status == 'all') {
-				sendMatches = matches;
-			}
-			
-			console.log('Sending ' + sendMatches.length + ' ' + status + ' ' + type + ' matches back.');
-			res.jsonp(JSON.stringify(sendMatches));
+
+				var matches = data;
+				var liveMatches = [];
+				var completeMatches = [];
+				var upcomingMatches = [];
+
+				for (var i = 0; i < matches.length; i++) {
+					var match = matches[i];
+
+					if (match.status == 'Complete') {
+						completeMatches.push(match);
+					} else if (match.status == 'Live') {
+						liveMatches.push(match);
+					} else if (match.status == 'Upcoming') {
+						upcomingMatches.push(match);
+					}
+				}
+
+				var sendMatches;
+				if (status == 'live') {
+					sendMatches = liveMatches;
+				} else if (status == 'complete') {
+					sendMatches = completeMatches;
+				} else if (status == 'upcoming') {
+					sendMatches = upcomingMatches;
+				} else if (status == 'all') {
+					sendMatches = matches;
+				}
+
+				console.log('Sending ' + sendMatches.length + ' ' + status + ' ' + type + ' matches back.');
+				res.jsonp(JSON.stringify(sendMatches));
+			});
 		});
-	});
+	} catch (error) {
+		res.jsonp(JSON.stringify({'error': error}));
+	}
 });
 
 
@@ -128,5 +148,5 @@ function callTwitchAPI(url, callback) {
 
 
 var server = http.listen(port, function () {
-    console.log('Listening on port %d', server.address().port);
+	console.log('Listening on port %d', server.address().port);
 });
