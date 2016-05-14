@@ -8,7 +8,8 @@
         "morgan": "~1.0.0",
         "body-parser": "~1.0.0",
 		"request": "latest",
-		"gosugamers-api": "latest"
+		"gosugamers-api": "latest",
+		"twitch-get-stream": "latest"
     },
     "scripts": {
         "start": "node app.js"
