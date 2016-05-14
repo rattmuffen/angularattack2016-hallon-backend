@@ -54,6 +54,7 @@ app.get('/get/games/:type/:status', function (req, res) {
 			}
 			
 			console.log('Sending ' + sendMatches.length + ' ' + status + ' ' + type + ' matches back.');
+			res.jsonp(JSON.stringify(sendMatches));
 		});
 	});
 });
