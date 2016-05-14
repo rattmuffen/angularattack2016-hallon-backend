@@ -50,7 +50,7 @@ app.get('/get/games/:type/:status', function (req, res) {
 	
 	console.log('Got request for ' + status + ' ' + type + ' games!');
 	
-	gosu.fetchMatchUrls(type, null, function (error, URLs) {
+	gosu.fetchMatchUrls(type == 'all' ? null : type, null, function (error, URLs) {
 		gosu.parseMatches(URLs, function (error, data) {
 			var matches = data;
 			var liveMatches = [];
