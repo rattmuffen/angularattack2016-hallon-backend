@@ -14,10 +14,13 @@ var port = process.env.PORT || 7845;
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(morgan('dev'));
+app.set("jsonp callback", true);
+
 
 
 app.get('/get/greeting', function (req, res) {
-	res.send('Hello Frontend!<br>Regards, Backend.');
+	var response = {greeting: 'Hej!'};
+	res.jsonp(response);
 });
 
 var server = http.listen(port, function () {
