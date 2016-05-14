@@ -38,10 +38,8 @@ app.get('/get/stream/:channel', function (req, res) {
 app.get('/get/channel/:url', function (req, res) {
 	try {
 		var gosuUrl = req.params.url;
-
-		var tournamentString = gosuUrl.split('/')[5];
-		var tournament = tournamentString.substr(tournamentString.indexOf('-') + 1, tournamentString.length);
-		tournament = tournament.replace(new RegExp('-', 'g'), ' ');
+		
+		var tournament = getTournament(gosuUrl);
 		console.log('Search for tournament: ' + tournament);
 
 		callTwitchAPI('search/channels?q=' + encodeURIComponent(tournament), function (data) {
@@ -102,6 +100,7 @@ app.get('/get/games/:type/:status', function (req, res) {
 
 						for (var i = 0; i < matches.length; i++) {
 							var match = matches[i];
+							match.tournament = getTournament(match.url);
 
 							if (match.status == 'Complete') {
 								completeMatches.push(match);
@@ -141,6 +140,13 @@ app.get('/get/greeting', function (req, res) {
 });
 
 
+function getTournament(gosuURL) {
+	var tournamentString = gosuURL.split('/')[5];
+	var tournament = tournamentString.substr(tournamentString.indexOf('-') + 1, tournamentString.length);
+	tournament = tournament.replace(new RegExp('-', 'g'), ' ');
+	
+	return tournament;
+}
 
 function callTwitchAPI(url, callback) {
 	var options = {
