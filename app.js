@@ -39,7 +39,7 @@ app.get('/get/channel/:url', function (req, res) {
 	console.log('Search for tournament: ' + tournament);
 		
 	callTwitchAPI('search/channels?q=' + encodeURIComponent(tournament), function (results) {
-		res.send(JSON.stringify(results));
+		res.jsonp(JSON.stringify(results));
 	});
 });
 
