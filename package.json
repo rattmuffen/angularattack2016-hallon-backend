@@ -9,7 +9,8 @@
         "body-parser": "~1.0.0",
 		"request": "latest",
 		"gosugamers-api": "latest",
-		"twitch-get-stream": "latest"
+		"twitch-get-stream": "latest",
+		"async": "latest"
     },
     "scripts": {
         "start": "node app.js"

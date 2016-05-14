@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var fs = require('fs');
 var request = require('request');
 var https = require('https');
+var async = require('async');
 
 var gosu = require('gosugamers-api');
 var twitchStream = require('twitch-get-stream');
@@ -43,8 +44,34 @@ app.get('/get/channel/:url', function (req, res) {
 		tournament = tournament.replace(new RegExp('-', 'g'), ' ');
 		console.log('Search for tournament: ' + tournament);
 
-		callTwitchAPI('search/channels?q=' + encodeURIComponent(tournament), function (results) {
-			res.jsonp(results);
+		callTwitchAPI('search/channels?q=' + encodeURIComponent(tournament), function (data) {
+			var channels = JSON.parse(data).channels;
+			var streams = [];
+			
+			async.map(channels, function(item, callback) {
+				var channel = item;
+				
+				callTwitchAPI('streams/' + channel.name, function (data) {
+					var stream = JSON.parse(data);
+					
+					if (stream.stream) {
+						console.log('Got stream for channel ' + channel.name + ': ' + stream);
+						
+						streams.push(stream.stream)
+						callback();
+					} else {
+						callback();
+					}
+				});
+			}, function (err, results) {
+				if (err) {
+					console.log(err);
+					res.jsonp(JSON.stringify({'error': err}));
+				}
+				
+				res.jsonp(JSON.stringify(streams));
+			});
+		
 		});
 	} catch (error) {
 		res.jsonp(JSON.stringify({'error': error}));
@@ -62,44 +89,45 @@ app.get('/get/games/:type/:status', function (req, res) {
 		gosu.fetchMatchUrls(type == 'all' ? null : type, null, function (error, URLs) {
 			if (error) {
 				res.jsonp(JSON.stringify({'error': error}));
-			}
+			} else {
 
-			gosu.parseMatches(URLs, function (error, data) {
-				if (error) {
-					res.jsonp(JSON.stringify({'error': error}));
-				}
+				gosu.parseMatches(URLs, function (error, data) {
+					if (error) {
+						res.jsonp(JSON.stringify({'error': error}));
+					} else {
+						var matches = data;
+						var liveMatches = [];
+						var completeMatches = [];
+						var upcomingMatches = [];
 
-				var matches = data;
-				var liveMatches = [];
-				var completeMatches = [];
-				var upcomingMatches = [];
+						for (var i = 0; i < matches.length; i++) {
+							var match = matches[i];
 
-				for (var i = 0; i < matches.length; i++) {
-					var match = matches[i];
+							if (match.status == 'Complete') {
+								completeMatches.push(match);
+							} else if (match.status == 'Live') {
+								liveMatches.push(match);
+							} else if (match.status == 'Upcoming') {
+								upcomingMatches.push(match);
+							}
+						}
 
-					if (match.status == 'Complete') {
-						completeMatches.push(match);
-					} else if (match.status == 'Live') {
-						liveMatches.push(match);
-					} else if (match.status == 'Upcoming') {
-						upcomingMatches.push(match);
+						var sendMatches;
+						if (status == 'live') {
+							sendMatches = liveMatches;
+						} else if (status == 'complete') {
+							sendMatches = completeMatches;
+						} else if (status == 'upcoming') {
+							sendMatches = upcomingMatches;
+						} else if (status == 'all') {
+							sendMatches = matches;
+						}
+
+						console.log('Sending ' + sendMatches.length + ' ' + status + ' ' + type + ' matches back.');
+						res.jsonp(JSON.stringify(sendMatches));
 					}
-				}
-
-				var sendMatches;
-				if (status == 'live') {
-					sendMatches = liveMatches;
-				} else if (status == 'complete') {
-					sendMatches = completeMatches;
-				} else if (status == 'upcoming') {
-					sendMatches = upcomingMatches;
-				} else if (status == 'all') {
-					sendMatches = matches;
-				}
-
-				console.log('Sending ' + sendMatches.length + ' ' + status + ' ' + type + ' matches back.');
-				res.jsonp(JSON.stringify(sendMatches));
-			});
+				});
+			}
 		});
 	} catch (error) {
 		res.jsonp(JSON.stringify({'error': error}));
