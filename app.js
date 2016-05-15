@@ -38,11 +38,13 @@ app.get('/get/stream/:channel', function (req, res) {
 app.get('/get/channel/:url', function (req, res) {
 	try {
 		var gosuUrl = req.params.url;
+		var game = req.query.game;
 		
 		var tournament = getTournament(gosuUrl);
-		console.log('Search for tournament: ' + tournament);
 
-		callTwitchAPI('search/channels?q=' + encodeURIComponent(tournament), function (data) {
+		console.log('Search for game: ' + game + ' tournament: ' + tournament);
+
+		callTwitchAPI('search/channels?q=' + encodeURIComponent(game + ' ' + tournament), function (data) {
 			var channels = JSON.parse(data).channels;
 			var streams = [];
 			
