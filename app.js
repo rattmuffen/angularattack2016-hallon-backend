@@ -77,6 +77,26 @@ app.get('/get/channel/:url', function (req, res) {
 });
 
 
+app.get('/get/gameinfo/:game', function (req, res) {
+	try {
+		var game = req.params.game;
+		
+		callTwitchAPI('search/games?q=' + encodeURIComponent(game) + '&type=suggest', function (data) {
+			var games = JSON.parse(data).games;
+			
+			if (games && games.length >= 1) {
+				res.jsonp(JSON.stringify(games[0]));
+			} else {
+				res.jsonp(JSON.stringify({}));
+			}
+		})
+		
+	} catch (error) {
+		res.jsonp(JSON.stringify({'error': error}));
+	}
+})
+
+
 app.get('/get/games/:type/:status', function (req, res) {
 	try {
 		var type = req.params.type;
